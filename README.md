@@ -76,6 +76,17 @@ bash install.sh
 
 See [`config.example.json`](config.example.json) for every option.
 
+## Sponsored by [XCloudPhone.com](https://xcloudphone.com)
+
+<p>
+  <a href="https://xcloudphone.com">
+    <img src="assets/xcloudphone-logo-dark.svg#gh-light-mode-only" alt="XCloudPhone" height="40">
+    <img src="assets/xcloudphone-logo-light.svg#gh-dark-mode-only" alt="XCloudPhone" height="40">
+  </a>
+</p>
+
+Real cloud phones for mobile gaming — [xcloudphone.com](https://xcloudphone.com)
+
 ## License
 
 MIT. Copyright (c) 2026 mrkungfudn.
