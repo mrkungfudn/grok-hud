@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Wrap interactive `grok` in an isolated tmux socket so a 5-line HUD sits
 # under the TUI. Grok has no statusLine hook; tmux status rows are the footer.
+# Repo language is English (Vietnamese lives in README.vi.md only).
 #
 # Disable: GROK_HUD_AUTO=0 grok
 # Real binary: "$HOME/.grok/bin/grok"

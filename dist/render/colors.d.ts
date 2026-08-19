@@ -1,3 +1,4 @@
+/** ANSI / hex palette for the grok-hud CLI (not the tmux wrap). */
 import type { HudColorOverrides } from '../config.js';
 export declare const RESET = "\u001B[0m";
 export declare function dim(text: string): string;

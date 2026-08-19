@@ -1,3 +1,4 @@
+/** English UI strings for the grok-hud CLI (default language). */
 export const en = {
   'label.context': 'Context',
   'label.usage': 'Usage',

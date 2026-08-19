@@ -1,3 +1,4 @@
+/** ANSI / hex palette for the grok-hud CLI (not the tmux wrap). */
 import type { HudColorName, HudColorValue, HudColorOverrides } from '../config.js';
 
 export const RESET = '\x1b[0m';

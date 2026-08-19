@@ -1,4 +1,6 @@
+# grok-hud — English-only repo (Vietnamese: README.vi.md)
 node_modules/
+__pycache__/
 *.log
 .DS_Store
 config.local.json

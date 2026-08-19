@@ -1,3 +1,4 @@
+/** Load ~/.grok/plugins/grok-hud/config.json (hex palette, thresholds, layout). */
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -57,6 +58,8 @@ function isObject(value) {
 function deepMerge(base, override) {
     const out = { ...base };
     for (const [key, value] of Object.entries(override)) {
+        if (key.startsWith('$'))
+            continue; // JSON "$docs" / "$schema" annotations
         if (value === undefined)
             continue;
         const current = out[key];

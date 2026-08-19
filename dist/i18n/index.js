@@ -1,3 +1,4 @@
+/** Language catalogs. Default is English; `zh` is a CLI locale, not repo copy. */
 import { en } from './en.js';
 import { zh } from './zh.js';
 const catalogs = { en, zh };

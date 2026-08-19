@@ -1,3 +1,4 @@
+/** Parse recent tool calls from a Grok session updates.jsonl tail. */
 import * as fs from 'node:fs';
 import type { ToolEntry, ToolStatus } from './types.js';
 

@@ -1,4 +1,6 @@
 {
+  // grok-hud TypeScript build. Emits dist/ so `grok plugin install` works
+  // without a local tsc. NodeNext modules, src/ → dist/.
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",

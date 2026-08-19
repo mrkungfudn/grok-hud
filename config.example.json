@@ -1,4 +1,5 @@
 {
+  "$docs": "Copy to ~/.grok/plugins/grok-hud/config.json — see README.md",
   "language": "en",
   "lineLayout": "expanded",
   "pathLevels": 1,

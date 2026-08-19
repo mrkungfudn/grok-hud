@@ -1,3 +1,4 @@
+/** Token counts, durations, and percents for HUD lines. */
 export function formatTokens(n) {
     if (!Number.isFinite(n) || n < 0)
         return '0';

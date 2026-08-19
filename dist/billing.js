@@ -1,3 +1,4 @@
+/** Weekly/monthly Grok credit usage for the HUD usage bar. */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as https from 'node:https';

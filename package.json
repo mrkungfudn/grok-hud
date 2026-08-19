@@ -1,6 +1,6 @@
 {
   "name": "grok-hud",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Multi-line status HUD for Grok — auto-attaches under the TUI via tmux (context, git, usage, tools).",
   "type": "module",
   "main": "dist/index.js",

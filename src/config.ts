@@ -1,3 +1,4 @@
+/** Load ~/.grok/plugins/grok-hud/config.json (hex palette, thresholds, layout). */
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -135,6 +136,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function deepMerge<T extends Record<string, unknown>>(base: T, override: Record<string, unknown>): T {
   const out: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(override)) {
+    if (key.startsWith('$')) continue; // JSON "$docs" / "$schema" annotations
     if (value === undefined) continue;
     const current = out[key];
     if (isObject(current) && isObject(value)) {

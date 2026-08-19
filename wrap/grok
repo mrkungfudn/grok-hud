@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 # PATH shim: interactive `grok` / `command grok` → launch.sh
+# Keep this ahead of ~/.grok/bin on PATH.
 exec "$HOME/.grok/plugins/grok-hud/launch.sh" "$@"

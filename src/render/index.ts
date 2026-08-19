@@ -1,3 +1,4 @@
+/** Render grok-hud snapshots (expanded / compact / tmux / JSON). */
 import type { RenderContext, SessionSnapshot, ToolEntry } from '../types.js';
 import { t } from '../i18n/index.js';
 import {

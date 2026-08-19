@@ -1,3 +1,4 @@
+/** Language catalogs. Default is English; `zh` is a CLI locale, not repo copy. */
 import { type MessageKey } from './en.js';
 import type { Language } from '../config.js';
 export declare function setLanguage(lang: Language): void;

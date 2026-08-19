@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/** grok-hud CLI — snapshots, --watch, --tmux, --json. English UI via src/i18n/en.ts */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { loadConfig, defaultConfigPath, updateUserConfig, type HudConfig } from './config.js';

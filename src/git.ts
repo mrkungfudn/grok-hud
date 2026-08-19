@@ -1,3 +1,4 @@
+/** Git branch / dirty / ahead-behind for the HUD line. */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 

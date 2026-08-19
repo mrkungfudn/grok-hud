@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert grok-hud ANSI → tmux status format (#[fg=...]).
+"""Convert grok-hud ANSI to tmux status format (#[fg=...]). English-only.
 
 tmux status-format does not honor raw CSI; it only paints its own #[] styles.
 That's why the HUD looked monochrome inside launch.sh even though --once is

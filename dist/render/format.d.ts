@@ -1,3 +1,4 @@
+/** Token counts, durations, and percents for HUD lines. */
 export declare function formatTokens(n: number): string;
 export declare function formatDuration(seconds?: number): string;
 export declare function formatMs(ms?: number): string;

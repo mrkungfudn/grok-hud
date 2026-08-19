@@ -1,3 +1,4 @@
+/** Shared grok-hud types (session snapshot, tools, render context). */
 import type { HudConfig } from './config.js';
 import type { GitStatus } from './git.js';
 import type { CreditUsage } from './billing.js';

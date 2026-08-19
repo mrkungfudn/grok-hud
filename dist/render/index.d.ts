@@ -1,3 +1,4 @@
+/** Render grok-hud snapshots (expanded / compact / tmux / JSON). */
 import type { RenderContext } from '../types.js';
 import { stripAnsi } from './colors.js';
 export declare function render(ctx: RenderContext): string;

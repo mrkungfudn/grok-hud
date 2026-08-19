@@ -1,5 +1,5 @@
 # Shared PATH bootstrap. Sourced by launch.sh / status-line.sh.
-# Do not exec this file.
+# Do not exec this file. Comments in this repo are English.
 
 export PATH="${HOME}/.local/bin:${HOME}/.grok/bin:${PATH}"
 

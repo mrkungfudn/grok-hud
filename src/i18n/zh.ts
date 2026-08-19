@@ -1,3 +1,4 @@
+/** Chinese UI strings for the grok-hud CLI locale. Repo docs stay English. */
 import type { MessageKey } from './en.js';
 
 export const zh: Record<MessageKey, string> = {
