@@ -2,6 +2,26 @@
 
 English is the default language of this repo. Vietnamese lives only in [`README.vi.md`](README.vi.md).
 
+## Version bump is mandatory
+
+**Every shipped change bumps the version in the same commit.** Do not pile HUD fixes, wrap fixes, README, or installer work under the same number (0.2.0 sat through theme, live tokens, herdr, docs, ASCII, and the 245% bug before anyone bumped).
+
+| Change | Bump |
+|---|---|
+| Bug fix, copy, docs, installer, skill | **patch** (`0.2.1` → `0.2.2`) |
+| New HUD line / feature / breaking wrap behavior | **minor** (`0.2.2` → `0.3.0`) |
+
+Touch all four in that commit:
+
+- `package.json`
+- `package-lock.json` (the two `"version"` fields on the root package)
+- `plugin.json`
+- `.grok-plugin/plugin.json`
+
+GitHub's file list shows the **last commit subject per file**. After a bump, leftover files still showing an old Vietnamese subject need to be in that same commit (or they keep lying on github.com).
+
+Current version: **0.2.2**.
+
 ## What this is
 
 A 5-line status HUD under the Grok TUI (model, git, context, weekly credits, recent tools).
@@ -51,3 +71,4 @@ Grok plugin commands under `commands/`: `setup`, `status`, `watch`, `configure`.
 - Don't commit `.env` or session dumps.
 - Don't `tmux kill-server` on the default socket — other tools (herdr) use other sockets, but the HUD socket is fair game only for HUD sessions.
 - Don't restore `~/.local/bin/grok` to the real binary while the wrap is supposed to be on PATH; `install.sh` retargets that link on purpose.
+- Don't ship a fix without a version bump (see **Version bump is mandatory**).

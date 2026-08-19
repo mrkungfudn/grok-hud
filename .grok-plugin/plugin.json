@@ -1,6 +1,6 @@
 {
   "name": "grok-hud",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Multi-line status HUD for Grok — context, git, usage, tools. Auto-attaches under the TUI.",
   "author": {
     "name": "mrkungfudn",
