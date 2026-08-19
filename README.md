@@ -24,6 +24,8 @@ Usage ███░░░░░░░ 33% (weekly) · resets 3d │ err 10
 
 Colors come from one palette in `config.json` (hex). Context bar, `● live`, `+lines`, and `✓` share the same green; warnings share the same gold; errors share the same red.
 
+The context bar follows Grok's live meter (`params._meta.totalTokens` in `updates.jsonl`), not the turn-end snapshot in `signals.json`. Tmux refreshes it about once a second.
+
 ## Install (one command)
 
 Needs **Grok CLI**, **Node.js ≥ 18**, **tmux**, and **git**.

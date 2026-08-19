@@ -107,9 +107,36 @@ function sessionFiles(cwd, sessionId) {
   const enc = encodeURIComponent(cwd);
   const dir = join(HOME, ".grok/sessions", enc, sessionId);
   return {
+    dir,
     signals: readJson(join(dir, "signals.json")) || {},
     summary: readJson(join(dir, "summary.json")) || {},
   };
+}
+
+/**
+ * Grok's meter reads params._meta.totalTokens on every stream/tool tick.
+ * signals.json only flushes at turn end (and lags auto-compact too).
+ *
+ * Regex on a byte tail, not JSON.parse-per-line: tool_call_update lines are
+ * often hundreds of KB, so a 512KB tail is one truncated JSON object and
+ * parse() returns nothing — HUD then falls back to the stale signals number.
+ * `_meta.totalTokens` sits at the END of the line, so the tail still has it.
+ * LAST sane value, not MAX — MAX once picked a 5M junk field.
+ */
+function lastTotalTokens(updatesPath) {
+  try {
+    if (!existsSync(updatesPath)) return 0;
+    const st = spawnSync("tail", ["-c", "524288", updatesPath], { encoding: "utf8", timeout: 1000 });
+    const text = st.stdout || "";
+    let last = 0;
+    for (const m of text.matchAll(/"totalTokens"\s*:\s*(\d+)/g)) {
+      const n = Number(m[1]);
+      if (n > 0 && n <= 2_000_000) last = n;
+    }
+    return last;
+  } catch {
+    return 0;
+  }
 }
 
 function permissionMode() {
@@ -200,12 +227,13 @@ function main() {
     return;
   }
 
-  const { signals, summary } = sessionFiles(s.cwd || cwd, s.sessionId);
+  const { dir: sessDir, signals, summary } = sessionFiles(s.cwd || cwd, s.sessionId);
   const git = s.git || {};
   const ctx = s.context || {};
-  const pct = Number(ctx.percent ?? signals.contextWindowUsage ?? 0);
-  const used = Number(ctx.used ?? signals.contextTokensUsed ?? 0);
-  const total = Number(ctx.total ?? signals.contextWindowTokens ?? 0);
+  const total = Number(ctx.total ?? signals.contextWindowTokens ?? 500000) || 500000;
+  const liveUsed = lastTotalTokens(join(sessDir, "updates.jsonl"));
+  const used = liveUsed || Number(ctx.used ?? signals.contextTokensUsed ?? 0);
+  const pct = total > 0 ? Math.round((used / total) * 100) : 0;
   const usage = blob.creditUsage || {};
   const usagePct = Math.round(Number(usage.percent) || 0);
   const dirty = dirtyCount(s.cwd || cwd);

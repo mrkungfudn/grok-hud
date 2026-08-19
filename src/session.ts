@@ -10,30 +10,32 @@ import type {
 import { getGitStatus } from './git.js';
 import { parseRecentTools } from './activity.js';
 
-/** Best-effort context tokens from the tail of updates.jsonl */
-function estimateTokensFromUpdates(updatesPath: string): number {
+/**
+ * Live context fill from the tail of updates.jsonl (`params._meta.totalTokens`).
+ * Grok's meter uses this during a turn. signals.json only flushes at turn end
+ * (and can stay stale across auto-compact). Regex on a byte tail, not
+ * JSON.parse-per-line: a single tool_call_update is often larger than the
+ * tail window, parse() then returns nothing, and HUD falls back to the stale
+ * signals number. `_meta` sits at the END of the line so the tail still has
+ * it. LAST sane value (≤ 2M), not MAX — MAX once picked a 5M junk field.
+ */
+function lastTotalTokensFromUpdates(updatesPath: string): number {
   if (!fs.existsSync(updatesPath)) return 0;
   try {
     const stat = fs.statSync(updatesPath);
     const fd = fs.openSync(updatesPath, 'r');
     try {
-      const maxBytes = Math.min(stat.size, 64 * 1024);
+      const maxBytes = Math.min(stat.size, 512 * 1024);
       const start = Math.max(0, stat.size - maxBytes);
       const buf = Buffer.alloc(maxBytes);
       const read = fs.readSync(fd, buf, 0, maxBytes, start);
       const content = buf.subarray(0, read).toString('utf8');
-      let best = 0;
-      for (const line of content.split('\n')) {
-        if (!line.includes('totalTokens')) continue;
-        try {
-          const o = JSON.parse(line) as { params?: { _meta?: { totalTokens?: number } } };
-          const n = o.params?._meta?.totalTokens;
-          if (typeof n === 'number' && n > best) best = n;
-        } catch {
-          // skip
-        }
+      let last = 0;
+      for (const m of content.matchAll(/"totalTokens"\s*:\s*(\d+)/g)) {
+        const n = Number(m[1]);
+        if (n > 0 && n <= 2_000_000) last = n;
       }
-      return best;
+      return last;
     } finally {
       fs.closeSync(fd);
     }
@@ -168,20 +170,18 @@ export async function loadSessionSnapshot(options: {
   const cwd = options.cwd || summary?.info?.cwd || summary?.git_root_dir || '';
   const tools: ToolEntry[] = parseRecentTools(path.join(dir, 'updates.jsonl'), maxTools * 3).slice(0, maxTools);
 
-  // Young sessions may lack signals.json; estimate context from latest updates totalTokens
-  if (!signals || signals.contextTokensUsed == null) {
-    const estimated = estimateTokensFromUpdates(path.join(dir, 'updates.jsonl'));
-    if (estimated > 0) {
-      signals = {
-        ...(signals ?? {}),
-        contextTokensUsed: signals?.contextTokensUsed ?? estimated,
-        contextWindowTokens: signals?.contextWindowTokens ?? 500_000,
-        contextWindowUsage:
-          signals?.contextWindowUsage ??
-          Math.round((estimated / (signals?.contextWindowTokens ?? 500_000)) * 100),
-        primaryModelId: signals?.primaryModelId ?? summary?.current_model_id,
-      };
-    }
+  // Prefer live totalTokens (written every tool/stream tick) over signals.json
+  // which only updates when a turn ends — that's why the HUD lagged Grok's meter.
+  const windowTokens = signals?.contextWindowTokens ?? 500_000;
+  const liveTokens = lastTotalTokensFromUpdates(path.join(dir, 'updates.jsonl'));
+  if (liveTokens > 0) {
+    signals = {
+      ...(signals ?? {}),
+      contextTokensUsed: liveTokens,
+      contextWindowTokens: windowTokens,
+      contextWindowUsage: Math.round((liveTokens / windowTokens) * 100),
+      primaryModelId: signals?.primaryModelId ?? summary?.current_model_id,
+    };
   }
 
   const gitStatus = enableGit && cwd ? await getGitStatus(cwd) : null;
