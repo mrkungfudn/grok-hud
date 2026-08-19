@@ -48,10 +48,10 @@ $RUNNER --once $ARGUMENTS
 
 | Field | Meaning |
 |-------|---------|
-| Context % | Session context window fill (`signals.json`) |
+| Context % | Session context window fill (live `updates.jsonl`, else `signals.json`) |
 | tokens | used / total context tokens |
-| 轮次 / Turns | User turns this session |
-| 工具 / Tools | Tool call count + recent activity line |
-| ● 活跃 | Process still running |
+| Turns | User turns this session |
+| Tools | Tool call count + recent activity line |
+| ● live | Process still running |
 
 If no sessions are found, suggest starting `grok` in a project directory, or pass `--cwd`.

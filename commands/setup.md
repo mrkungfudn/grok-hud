@@ -5,7 +5,7 @@ argument-hint: ""
 
 # /grok-hud:setup
 
-Chạy installer trong repo plugin (một lệnh, idempotent).
+Run the plugin installer (one command, idempotent). It also installs missing Git, Node.js ≥ 18, tmux, and the Grok CLI.
 
 ```bash
 PLUGIN_ROOT="${GROK_PLUGIN_ROOT:-}"
@@ -16,6 +16,6 @@ fi
 bash "$PLUGIN_ROOT/install.sh"
 ```
 
-Sau đó bảo user **mở tab mới** rồi gõ `grok`. HUD 5 dòng dưới TUI.
+Then tell the user to **open a new tab** and run `grok`. HUD is 5 lines under the TUI.
 
-Tắt: `GROK_HUD_AUTO=0 grok`. Config: `~/.grok/plugins/grok-hud/config.json`.
+Disable: `GROK_HUD_AUTO=0 grok`. Config: `~/.grok/plugins/grok-hud/config.json`.

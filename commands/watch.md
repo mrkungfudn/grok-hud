@@ -5,12 +5,12 @@ argument-hint: ""
 
 # /grok-hud:watch
 
-Sau `install.sh`, gõ `grok` là HUD tự hiện (5 dòng tmux dưới TUI).
+After `install.sh`, type `grok` and the HUD appears (5 tmux lines under the TUI).
 
-Không tách pane iTerm. Không cần `--watch` trừ khi muốn pane riêng:
+No iTerm split. You do not need `--watch` unless you want a separate pane:
 
 ```bash
 grok-hud --watch --cwd "$(pwd)"
 ```
 
-Tắt wrap: `GROK_HUD_AUTO=0 grok`.
+Disable the wrap: `GROK_HUD_AUTO=0 grok`.

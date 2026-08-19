@@ -5,7 +5,7 @@ argument-hint: "[language=en|zh] [layout=expanded|compact]"
 
 # /grok-hud:configure
 
-Sửa `~/.grok/plugins/grok-hud/config.json` (tạo bằng `grok-hud --init-config` nếu thiếu).
+Edit `~/.grok/plugins/grok-hud/config.json` (create it with `grok-hud --init-config` if missing).
 
 | Pref | JSON path | Values |
 |------|-----------|--------|
@@ -23,4 +23,4 @@ Preview:
 grok-hud --once
 ```
 
-Tài liệu đầy đủ: https://github.com/mrkungfudn/grok-hud
+Full docs: https://github.com/mrkungfudn/grok-hud

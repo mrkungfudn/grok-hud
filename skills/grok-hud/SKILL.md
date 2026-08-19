@@ -11,10 +11,10 @@ argument-hint: "[setup | status | watch | configure]"
 
 # grok-hud
 
-Grok không có statusLine API. Plugin này:
+Grok has no statusLine API. This plugin:
 
-1. CLI `grok-hud` đọc `~/.grok/sessions/**/signals.json`
-2. `install.sh` bọc lệnh `grok` bằng tmux socket riêng, vẽ 5 dòng HUD dưới TUI
+1. CLI `grok-hud` reads `~/.grok/sessions/**/signals.json` and live `updates.jsonl`
+2. `install.sh` wraps `grok` in an isolated tmux socket and paints a 5-line HUD under the TUI
 
 ## Install
 
@@ -22,15 +22,15 @@ Grok không có statusLine API. Plugin này:
 curl -fsSL https://raw.githubusercontent.com/mrkungfudn/grok-hud/main/install.sh | bash
 ```
 
-Rồi tab mới, gõ `grok`.
+Then a **new tab**, type `grok`.
 
 ## Routes
 
-| Ý | Làm |
+| Intent | Do |
 |---|---|
-| Cài / sửa | `/grok-hud:setup` hoặc `install.sh` |
+| Install / repair | `/grok-hud:setup` or `install.sh` |
 | Snapshot | `grok-hud --once` |
-| Tắt HUD | `GROK_HUD_AUTO=0 grok` |
+| Disable HUD | `GROK_HUD_AUTO=0 grok` |
 | Config | `~/.grok/plugins/grok-hud/config.json` |
 | Credits | builtin `/usage` |
 | Context in-TUI | builtin `/context` |

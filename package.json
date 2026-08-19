@@ -18,6 +18,9 @@
     "config.example.json",
     "install.sh",
     "README.md",
+    "README.vi.md",
+    "AGENTS.md",
+    "assets/",
     "LICENSE"
   ],
   "scripts": {
