@@ -20,9 +20,18 @@ const HOME = homedir();
 const CFG_PATH = join(HOME, ".grok/plugins/grok-hud/config.json");
 const RESET = "\x1b[0m";
 const DIM = "\x1b[2m";
-const GREEN = "\x1b[32m";
-const RED = "\x1b[31m";
 const SEP = `${DIM} │ ${RESET}`;
+/** Fallbacks only — live colors always come from config.json hex. */
+const FALLBACK = {
+  context: "#4ade80",
+  warning: "#facc15",
+  critical: "#f87171",
+  model: "#22d3ee",
+  project: "#facc15",
+  git: "#c084fc",
+  gitBranch: "#67e8f9",
+  tools: "#60a5fa",
+};
 
 function loadCfg() {
   try {
@@ -67,10 +76,10 @@ function bar(pct, width, color) {
   return paint("█".repeat(filled) + "░".repeat(width - filled), color);
 }
 
-function pctColor(pct, colors, warn, crit) {
-  if (pct >= crit) return hexAnsi(colors.critical, RED);
-  if (pct >= warn) return hexAnsi(colors.warning, "\x1b[33m");
-  return hexAnsi(colors.context, GREEN);
+function pctColor(pct, cOk, cWarn, cErr, warn, crit) {
+  if (pct >= crit) return cErr;
+  if (pct >= warn) return cWarn;
+  return cOk;
 }
 
 function grokHudJson(cwd) {
@@ -132,10 +141,10 @@ function dirtyCount(cwd) {
   return (r.stdout || "").split("\n").filter((l) => l.trim()).length;
 }
 
-function toolGlyph(status) {
-  if (status === "error") return paint("✗", RED);
-  if (status === "running" || status === "pending") return paint("◐", "\x1b[33m");
-  return paint("✓", GREEN);
+function toolGlyph(status, cOk, cWarn, cErr) {
+  if (status === "error") return paint("✗", cErr);
+  if (status === "running" || status === "pending") return paint("◐", cWarn);
+  return paint("✓", cOk);
 }
 
 function shortModel(id) {
@@ -170,11 +179,14 @@ function main() {
   const crit = Number(cfg.display?.criticalThreshold ?? 90);
   const now = Date.now();
 
-  const cModel = hexAnsi(colors.model, "\x1b[36m");
-  const cProj = hexAnsi(colors.project, "\x1b[33m");
-  const cGit = hexAnsi(colors.git, "\x1b[35m");
-  const cBr = hexAnsi(colors.gitBranch, "\x1b[36m");
-  const cTools = hexAnsi(colors.tools, "\x1b[94m");
+  const cOk = hexAnsi(colors.context, hexAnsi(FALLBACK.context, DIM));
+  const cWarn = hexAnsi(colors.warning, hexAnsi(FALLBACK.warning, DIM));
+  const cErr = hexAnsi(colors.critical, hexAnsi(FALLBACK.critical, DIM));
+  const cModel = hexAnsi(colors.model, hexAnsi(FALLBACK.model, DIM));
+  const cProj = hexAnsi(colors.project, hexAnsi(FALLBACK.project, DIM));
+  const cGit = hexAnsi(colors.git, hexAnsi(FALLBACK.git, DIM));
+  const cBr = hexAnsi(colors.gitBranch, hexAnsi(FALLBACK.gitBranch, DIM));
+  const cTools = hexAnsi(colors.tools, hexAnsi(FALLBACK.tools, DIM));
   const cLabel = DIM;
 
   const blob = grokHudJson(cwd);
@@ -199,7 +211,7 @@ function main() {
   const dirty = dirtyCount(s.cwd || cwd);
   const effort = summary.reasoning_effort || "";
   const mode = modeLabel(summary.agent_name || s.agent);
-  const title = (s.title || summary.generated_title || "").slice(0, 32);
+  const title = (s.title || summary.generated_title || "").slice(0, 24);
   const host = hostname().replace(/\.local$/, "");
   const repo = basename((s.cwd || cwd).replace(/\/$/, ""));
   const perm = permissionMode();
@@ -212,8 +224,8 @@ function main() {
   const del = Number(signals.agentLinesRemoved || 0);
   const turns = s.turns ?? signals.turnCount ?? "";
   const toolsN = s.toolCallCount ?? signals.toolCallCount ?? "";
-  const ctxCol = pctColor(pct, colors, warn, crit);
-  const useCol = pctColor(usagePct, colors, warn, crit);
+  const ctxCol = pctColor(pct, cOk, cWarn, cErr, warn, crit);
+  const useCol = pctColor(usagePct, cOk, cWarn, cErr, warn, crit);
 
   // Line 1 — OMC line1: host · repo · branch · dirty
   const gitBits = [];
@@ -224,16 +236,16 @@ function main() {
   }
   if (git.ahead > 0) gitBits.push(paint(`↑${git.ahead}`, cGit));
   if (git.behind > 0) gitBits.push(paint(`↓${git.behind}`, cGit));
-  if (dirty > 0) gitBits.push(paint(`${dirty}Δ`, "\x1b[33m"));
+  if (dirty > 0) gitBits.push(paint(`${dirty}Δ`, cWarn));
   const line1 = [paint(host, cLabel), gitBits.join(" ")].filter(Boolean).join(SEP);
 
   // Line 2 — claude-hud identity: [model ◑ effort] · mode · title · live · ver
   const modelId = shortModel(s.model || signals.primaryModelId || "grok");
   const effortBit = effort ? ` ◑ ${effort}` : "";
-  const live = s.live ? paint("● live", GREEN) : paint("○ stale", DIM);
+  const live = s.live ? paint("● live", cOk) : paint("○ stale", DIM);
   const line2 = [
     paint(`[${modelId}${effortBit}]`, cModel),
-    mode ? paint(mode, "\x1b[35m") : "",
+    mode ? paint(mode, cGit) : "",
     title ? paint(title, cLabel) : "",
     live,
     ver ? paint(`v${ver}`, cLabel) : "",
@@ -244,14 +256,14 @@ function main() {
 
   // Line 3 — OMC contextBar + session
   const ctxWarn =
-    pct >= crit ? paint(" ⚠ context critical", RED) : pct >= warn ? paint(" ⚠ context high", "\x1b[33m") : "";
+    pct >= crit ? paint(" ⚠ context critical", cErr) : pct >= warn ? paint(" ⚠ context high", cWarn) : "";
   const line3 = [
     `${paint("Context", cLabel)} ${bar(pct, 10, ctxCol)} ${paint(`${pct}% (${shortTok(used)}/${shortTok(total)})`, ctxCol)}${ctxWarn}`,
     `${paint("Time", cLabel)} ${paint(dur(s.durationSeconds ?? signals.sessionDurationSeconds), cLabel)}`,
     turns !== "" ? `${paint("Turns", cLabel)} ${paint(String(turns), cLabel)}` : "",
     toolsN !== "" ? `${paint("Tools", cLabel)} ${paint(String(toolsN), cLabel)}` : "",
     files ? `${paint("Files", cLabel)} ${paint(String(files), cLabel)}` : "",
-    add || del ? `${paint("Lines", cLabel)} ${paint(`+${add}`, GREEN)} ${paint(`-${del}`, RED)}` : "",
+    add || del ? `${paint("Lines", cLabel)} ${paint(`+${add}`, cOk)} ${paint(`-${del}`, cErr)}` : "",
   ]
     .filter(Boolean)
     .join(SEP);
@@ -260,9 +272,9 @@ function main() {
   const reset = resetsIn(usage.periodEnd, now);
   const line4 = [
     `${paint("Usage", cLabel)} ${bar(usagePct, 10, useCol)} ${paint(`${usagePct}%`, useCol)} ${paint(`(${usage.periodType || "weekly"})`, cLabel)}${reset ? paint(` · resets ${reset}`, cLabel) : ""}`,
-    sandbox ? paint(`sandbox ${sandbox}`, "\x1b[33m") : "",
+    sandbox ? paint(`sandbox ${sandbox}`, cWarn) : "",
     compact > 0 ? paint(`compact ${compact}`, cLabel) : "",
-    errs > 0 ? paint(`err ${errs}`, RED) : "",
+    errs > 0 ? paint(`err ${errs}`, cErr) : "",
   ]
     .filter(Boolean)
     .join(SEP);
@@ -273,13 +285,13 @@ function main() {
   const chunks = [];
   for (const t of recent) {
     if (t.status === "running" || t.status === "pending") {
-      chunks.push(`${toolGlyph(t.status)} ${paint(t.name, cTools)}${t.target ? paint(` ${String(t.target).slice(0, 28)}`, cLabel) : ""}`);
+      chunks.push(`${toolGlyph(t.status, cOk, cWarn, cErr)} ${paint(t.name, cTools)}${t.target ? paint(` ${String(t.target).slice(0, 18)}`, cLabel) : ""}`);
     } else {
       counts.set(t.name, (counts.get(t.name) || 0) + 1);
     }
   }
   for (const [name, n] of counts) {
-    chunks.push(`${toolGlyph("completed")} ${paint(name, cTools)}${n > 1 ? paint(` ×${n}`, cLabel) : ""}`);
+    chunks.push(`${toolGlyph("completed", cOk, cWarn, cErr)} ${paint(name, cTools)}${n > 1 ? paint(` ×${n}`, cLabel) : ""}`);
   }
   let line5 = chunks.length ? chunks.join(" | ") : paint("(no recent tools)", cLabel);
 
