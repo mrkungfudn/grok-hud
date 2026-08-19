@@ -1,0 +1,21 @@
+{
+  "name": "grok-hud",
+  "version": "0.2.0",
+  "description": "Multi-line status HUD for Grok — context, git, usage, tools. Auto-attaches under the TUI.",
+  "author": {
+    "name": "mrkungfudn",
+    "url": "https://github.com/mrkungfudn"
+  },
+  "homepage": "https://github.com/mrkungfudn/grok-hud",
+  "repository": "https://github.com/mrkungfudn/grok-hud",
+  "license": "MIT",
+  "keywords": [
+    "hud",
+    "statusline",
+    "context",
+    "usage",
+    "tokens",
+    "monitoring",
+    "tmux"
+  ]
+}

@@ -1,0 +1,28 @@
+export const en = {
+  'label.context': 'Context',
+  'label.usage': 'Usage',
+  'label.weekly': 'weekly',
+  'label.monthly': 'monthly',
+  'label.week': 'week',
+  'label.weekEnds': 'week ends',
+  'label.resets': 'resets',
+  'label.tools': 'Tools',
+  'label.turns': 'Turns',
+  'label.duration': 'Time',
+  'label.latency': 'TTFT',
+  'label.lines': 'Lines',
+  'label.session': 'Session',
+  'label.live': 'live',
+  'label.stale': 'stale',
+  'label.noSessions': 'No Grok sessions found',
+  'label.inactiveHint': 'Start grok or pass --cwd / --session',
+  'status.running': 'running',
+  'status.completed': 'done',
+  'status.error': 'error',
+  'status.pending': 'pending',
+  'status.limitReached': 'limit reached',
+  'init.banner': 'grok-hud — real-time HUD for Grok',
+  'init.help': 'Try: grok-hud --watch   or   grok-hud --tmux',
+} as const;
+
+export type MessageKey = keyof typeof en;

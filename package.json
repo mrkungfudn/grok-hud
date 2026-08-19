@@ -1,0 +1,62 @@
+{
+  "name": "grok-hud",
+  "version": "0.2.0",
+  "description": "Multi-line status HUD for Grok — auto-attaches under the TUI via tmux (context, git, usage, tools).",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "grok-hud": "bin/grok-hud.js"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "wrap/",
+    "commands/",
+    "skills/",
+    "plugin.json",
+    ".grok-plugin/",
+    "config.example.json",
+    "install.sh",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "watch": "node dist/index.js --watch",
+    "test:once": "node dist/index.js --once",
+    "prepare": "tsc",
+    "prepublishOnly": "npm run build",
+    "plugin:validate": "grok plugin validate ."
+  },
+  "keywords": [
+    "grok",
+    "xai",
+    "statusline",
+    "hud",
+    "cli",
+    "plugin",
+    "tmux"
+  ],
+  "author": "mrkungfudn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrkungfudn/grok-hud.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mrkungfudn/grok-hud/issues"
+  },
+  "homepage": "https://github.com/mrkungfudn/grok-hud#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  }
+}

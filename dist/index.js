@@ -1,0 +1,379 @@
+#!/usr/bin/env node
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { loadConfig, defaultConfigPath, updateUserConfig } from './config.js';
+import { collectSnapshots } from './session.js';
+import { getCreditUsage } from './billing.js';
+import { maybePingTelemetry, setTelemetryEnabled, telemetryStatus } from './telemetry.js';
+import { setLanguage, t } from './i18n/index.js';
+import { render, renderJson, renderTmux, visualRowCount } from './render/index.js';
+function parseArgs(argv) {
+    const opts = {
+        watch: false,
+        once: true,
+        tmux: false,
+        json: false,
+        all: false,
+        noColor: false,
+        plain: false,
+        initConfig: false,
+        help: false,
+        version: false,
+    };
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
+        switch (arg) {
+            case '-w':
+            case '--watch':
+                opts.watch = true;
+                opts.once = false;
+                break;
+            case '--once':
+                opts.once = true;
+                opts.watch = false;
+                break;
+            case '--tmux':
+                opts.tmux = true;
+                break;
+            case '--json':
+                opts.json = true;
+                break;
+            case '--all':
+                opts.all = true;
+                break;
+            case '--no-color':
+            case '--plain':
+                opts.noColor = true;
+                opts.plain = true;
+                break;
+            case '--cwd':
+                opts.cwd = argv[++i];
+                break;
+            case '--session':
+                opts.session = argv[++i];
+                break;
+            case '--grok-home':
+                opts.grokHome = argv[++i];
+                break;
+            case '--interval':
+            case '-n': {
+                const n = Number.parseInt(argv[++i] ?? '', 10);
+                if (Number.isFinite(n) && n > 0)
+                    opts.refreshMs = n;
+                break;
+            }
+            case '--init-config':
+                opts.initConfig = true;
+                break;
+            case '--telemetry': {
+                const v = (argv[++i] ?? 'status').toLowerCase();
+                if (v === 'on' || v === 'off' || v === 'status') {
+                    opts.telemetryCmd = v;
+                }
+                else {
+                    console.error(`Unknown --telemetry value: ${v} (use on|off|status)`);
+                    opts.help = true;
+                }
+                break;
+            }
+            case '-h':
+            case '--help':
+                opts.help = true;
+                break;
+            case '-v':
+            case '--version':
+                opts.version = true;
+                break;
+            default:
+                if (arg.startsWith('-')) {
+                    console.error(`Unknown flag: ${arg}`);
+                    opts.help = true;
+                }
+                break;
+        }
+    }
+    return opts;
+}
+function printHelp() {
+    console.log(`
+${t('init.banner')}
+
+Usage:
+  grok-hud [options]
+
+Options:
+  --watch, -w          Refresh continuously (default interval 1000ms)
+  --once               Print once and exit (default)
+  --tmux               Single-line output for tmux status bar
+  --json               Machine-readable JSON
+  --all                Show all active sessions
+  --cwd <path>         Focus session for this working directory
+  --session <id>       Focus a specific session id
+  --grok-home <path>   Override ~/.grok
+  --interval, -n <ms>  Watch refresh interval
+  --no-color           Disable ANSI colors
+  --init-config        Write default config to ~/.grok/plugins/grok-hud/config.json
+  --telemetry on|off|status
+                       Opt-in anonymous usage pings (default off)
+  --help, -h           Show help
+  --version, -v        Show version
+
+Examples:
+  grok-hud                     # one-shot HUD for current/active session
+  grok-hud --watch             # live dashboard in another pane
+  grok-hud --cwd ~/dev/app     # focus project
+  grok-hud --tmux              # for tmux status-right
+  grok-hud --json | jq         # script integration
+  grok-hud --telemetry on      # opt in to anonymous install/start counts
+  grok-hud --telemetry status  # local state + public aggregate counts
+
+Data sources:
+  ~/.grok/active_sessions.json
+  ~/.grok/sessions/<cwd>/<id>/signals.json
+  ~/.grok/sessions/<cwd>/<id>/summary.json
+  ~/.grok/sessions/<cwd>/<id>/updates.jsonl
+  Grok billing API (weekly credits; cached ~60s):
+    GET https://cli-chat-proxy.grok.com/v1/billing?format=credits
+    auth: ~/.grok/auth.json
+
+Config:
+  ${defaultConfigPath()}
+`);
+}
+function writeDefaultConfig(config) {
+    const file = defaultConfigPath(config.grokHome);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    if (!fs.existsSync(file)) {
+        const { grokHome: _gh, ...rest } = config;
+        fs.writeFileSync(file, JSON.stringify(rest, null, 2) + '\n', 'utf8');
+    }
+    return file;
+}
+async function buildContext(config, opts) {
+    const sessionsPromise = collectSnapshots({
+        grokHome: config.grokHome,
+        cwdFilter: opts.cwd ? path.resolve(opts.cwd) : undefined,
+        sessionId: opts.session,
+        enableGit: config.gitStatus.enabled,
+        maxTools: config.display.maxTools,
+        includeInactive: true,
+    });
+    const creditPromise = config.display.showUsage === false
+        ? Promise.resolve(null)
+        : getCreditUsage({
+            grokHome: config.grokHome,
+            ttlMs: config.usage?.cacheTtlMs ?? 60_000,
+        });
+    const [sessions, creditUsage] = await Promise.all([sessionsPromise, creditPromise]);
+    // Prefer session matching process cwd when not specified
+    let focus = sessions[0] ?? null;
+    if (!opts.session && !opts.cwd) {
+        const here = path.resolve(process.cwd());
+        const match = sessions.find((s) => s.cwd && path.resolve(s.cwd) === here);
+        if (match)
+            focus = match;
+    }
+    const cfg = {
+        ...config,
+        display: {
+            ...config.display,
+            showAllSessions: opts.all || config.display.showAllSessions,
+        },
+    };
+    return {
+        sessions,
+        focus,
+        config: cfg,
+        now: Date.now(),
+        creditUsage,
+    };
+}
+function output(text, opts) {
+    if (opts.noColor) {
+        // strip ANSI
+        // eslint-disable-next-line no-control-regex
+        process.stdout.write(text.replace(/\x1b\[[0-9;]*m/g, '') + (text.endsWith('\n') ? '' : '\n'));
+        return;
+    }
+    process.stdout.write(text.endsWith('\n') ? text : text + '\n');
+}
+function fireTelemetry(config, mode) {
+    // Never block HUD on network; swallow errors inside maybePingTelemetry
+    void maybePingTelemetry({
+        grokHome: config.grokHome,
+        telemetry: config.telemetry ?? { enabled: false, endpoint: '' },
+        mode,
+    });
+}
+async function runOnce(config, opts) {
+    const mode = opts.json ? 'json' : opts.tmux ? 'tmux' : 'once';
+    fireTelemetry(config, mode);
+    const ctx = await buildContext(config, opts);
+    if (opts.json) {
+        output(renderJson(ctx), opts);
+        return;
+    }
+    if (opts.tmux) {
+        output(renderTmux(ctx, !opts.noColor), opts);
+        return;
+    }
+    output(render(ctx), opts);
+}
+async function runWatch(config, opts) {
+    fireTelemetry(config, 'watch');
+    const interval = opts.refreshMs ?? config.refreshMs;
+    let prevRows = 0;
+    let inFlight = false;
+    // Always redraw in-place for multi-line watch (even if isTTY is false —
+    // Grok's embedded terminal supports CSI cursor moves + erase).
+    // Use --tmux / --json for single-shot line modes.
+    const useInPlace = !opts.tmux && !opts.json;
+    const writeFrame = (text) => {
+        // Normalize: no trailing newline in body; we always add one final \n
+        const body = text.replace(/\n+$/, '');
+        const cols = process.stdout.columns || process.stderr.columns || 80;
+        const rows = visualRowCount(body, cols);
+        if (!useInPlace) {
+            process.stdout.write(body + '\n\n');
+            return;
+        }
+        // Move to the first row of the previous frame (if any), column 0.
+        // Use CUU (A) + CR — more widely supported than CPL (F).
+        if (prevRows > 0) {
+            process.stdout.write(`\x1b[${prevRows}A\r`);
+        }
+        // Erase from cursor to end of screen so leftover rows (shrink / wrap) vanish.
+        process.stdout.write('\x1b[0J');
+        process.stdout.write(body + '\n');
+        prevRows = rows;
+    };
+    const tick = async () => {
+        // Serialize ticks — buildContext can exceed interval (billing/git).
+        if (inFlight)
+            return;
+        inFlight = true;
+        try {
+            const ctx = await buildContext(config, opts);
+            let text;
+            if (opts.json) {
+                text = renderJson(ctx);
+            }
+            else if (opts.tmux) {
+                text = renderTmux(ctx, !opts.noColor);
+            }
+            else {
+                text = render(ctx);
+            }
+            if (opts.noColor) {
+                // eslint-disable-next-line no-control-regex
+                text = text.replace(/\x1b\[[0-9;]*m/g, '');
+            }
+            if (opts.json || opts.tmux) {
+                // Single-line / JSON: overwrite one line when possible
+                if (useInPlace && opts.tmux) {
+                    process.stdout.write(`\r\x1b[2K${text}`);
+                }
+                else {
+                    process.stdout.write(text + '\n');
+                }
+            }
+            else {
+                writeFrame(text);
+            }
+        }
+        catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            process.stderr.write(`[grok-hud] ${msg}\n`);
+        }
+        finally {
+            inFlight = false;
+        }
+    };
+    // Hide cursor during watch
+    if (useInPlace) {
+        process.stdout.write('\x1b[?25l');
+    }
+    const restore = () => {
+        if (useInPlace) {
+            process.stdout.write('\x1b[?25h');
+            // Leave a clean newline so the shell prompt is not glued to the HUD
+            process.stdout.write('\n');
+        }
+        process.exit(0);
+    };
+    process.on('SIGINT', restore);
+    process.on('SIGTERM', restore);
+    await tick();
+    setInterval(() => {
+        void tick();
+    }, interval);
+}
+async function main() {
+    const opts = parseArgs(process.argv.slice(2));
+    const override = {};
+    if (opts.grokHome)
+        override.grokHome = opts.grokHome;
+    if (opts.refreshMs)
+        override.refreshMs = opts.refreshMs;
+    const config = loadConfig(override);
+    if (opts.all) {
+        config.display.showAllSessions = true;
+    }
+    if (opts.refreshMs) {
+        config.refreshMs = opts.refreshMs;
+    }
+    setLanguage(config.language);
+    if (opts.help) {
+        printHelp();
+        return;
+    }
+    if (opts.version) {
+        console.log('0.1.5');
+        return;
+    }
+    if (opts.telemetryCmd) {
+        if (opts.telemetryCmd === 'status') {
+            console.log(await telemetryStatus(config.grokHome, config.telemetry));
+            return;
+        }
+        const enabled = opts.telemetryCmd === 'on';
+        setTelemetryEnabled(config.grokHome, enabled);
+        const file = updateUserConfig(config.grokHome, (raw) => {
+            const prev = raw.telemetry && typeof raw.telemetry === 'object'
+                ? raw.telemetry
+                : {};
+            raw.telemetry = { ...prev, enabled };
+        });
+        console.log(`Telemetry ${enabled ? 'enabled' : 'disabled'}.`);
+        console.log(`Updated: ${file}`);
+        if (enabled) {
+            console.log('Anonymous install/start counts only (no paths/tokens/prompts). Run with --telemetry status to inspect.');
+            // Immediate first ping so status shows quickly
+            fireTelemetry({ ...config, telemetry: { ...config.telemetry, enabled: true } }, 'once');
+            // Give the ping a moment before exit
+            await new Promise((r) => setTimeout(r, 800));
+            console.log(await telemetryStatus(config.grokHome, { ...config.telemetry, enabled: true }));
+        }
+        return;
+    }
+    if (opts.initConfig) {
+        const file = writeDefaultConfig(config);
+        console.log(`Config written: ${file}`);
+        return;
+    }
+    // Auto-detect cwd focus when launched inside a project that has a session
+    if (!opts.cwd && !opts.session) {
+        // keep default discovery
+    }
+    if (opts.watch) {
+        await runWatch(config, opts);
+    }
+    else {
+        await runOnce(config, opts);
+    }
+}
+main().catch((err) => {
+    console.error('[grok-hud] fatal:', err instanceof Error ? err.message : err);
+    process.exit(1);
+});
+//# sourceMappingURL=index.js.map
