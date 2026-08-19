@@ -2,6 +2,15 @@
 
 [English](README.md) · [Tiếng Việt](README.vi.md)
 
+```
+                     __         __              __
+   ____ __________  / /__      / /_  __  ______/ /
+  / __ `/ ___/ __ \/ //_/_____/ __ \/ / / / __  /
+ / /_/ / /  / /_/ / ,< /_____/ / / / /_/ / /_/ /
+ \__, /_/   \____/_/|_|     /_/ /_/\__,_/\__,_/
+/____/
+```
+
 A **5-line status HUD** under the Grok TUI: model, git, context, weekly credits, and recent tools.
 
 Grok has no `statusLine` API. This attaches the HUD with tmux in the **same window** (no split pane).

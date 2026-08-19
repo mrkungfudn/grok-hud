@@ -40,8 +40,18 @@ have() { command -v "$1" >/dev/null 2>&1; }
 cols() { tput cols 2>/dev/null || echo "${COLUMNS:-80}"; }
 
 banner() {
-  printf '\n  %s%s grok-hud%s  %s5-line status HUD under the Grok TUI%s\n' \
-    "$C_BOLD" "$C_CYAN" "$C_RESET" "$C_DIM" "$C_RESET"
+  # figlet slant "grok-hud" — 50 cols, fits a default terminal.
+  printf '\n%s%s' "$C_BOLD" "$C_CYAN"
+  cat <<'EOF'
+                     __         __              __
+   ____ __________  / /__      / /_  __  ______/ /
+  / __ `/ ___/ __ \/ //_/_____/ __ \/ / / / __  /
+ / /_/ / /  / /_/ / ,< /_____/ / / / /_/ / /_/ /
+ \__, /_/   \____/_/|_|     /_/ /_/\__,_/\__,_/
+/____/
+EOF
+  printf '%s' "$C_RESET"
+  printf '  %s5-line status HUD under the Grok TUI%s\n' "$C_DIM" "$C_RESET"
   printf '\n'
   # Merlin1 (patorjk) of XCLOUDPHONE.COM — ~185 cols; skip on narrow terms
   # so the banner does not wrap into noise.

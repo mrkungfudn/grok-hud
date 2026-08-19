@@ -2,6 +2,15 @@
 
 [English](README.md) · [Tiếng Việt](README.vi.md)
 
+```
+                     __         __              __
+   ____ __________  / /__      / /_  __  ______/ /
+  / __ `/ ___/ __ \/ //_/_____/ __ \/ / / / __  /
+ / /_/ / /  / /_/ / ,< /_____/ / / / /_/ / /_/ /
+ \__, /_/   \____/_/|_|     /_/ /_/\__,_/\__,_/
+/____/
+```
+
 **HUD 5 dòng** dưới Grok TUI: model, git, context, credit tuần, tool gần nhất.
 
 Grok không có API `statusLine`. grok-hud gắn HUD bằng tmux **cùng cửa sổ** (không tách pane).
