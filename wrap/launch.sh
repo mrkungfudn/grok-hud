@@ -67,20 +67,27 @@ if [ ! -f "$CONF" ]; then
   passthrough "$@"
 fi
 
-# Nested tmux (herdr, etc.): do not steal that server. Paint this window only.
-if [ -n "${TMUX:-}" ]; then
-  tmux set-option -w status on
-  tmux set-option -w status-position bottom
-  tmux set-option -w status-interval 1
-  tmux set-option -w status-left ""
-  tmux set-option -w status-right-length 240
-  tmux set-option -w status-style "bg=default,fg=default"
-  tmux set-option -w status-right "#(PATH=\"$PATH\" grok-hud --tmux --cwd \"#{pane_current_path}\" 2>/dev/null)"
-  passthrough "$@"
+# Already inside the HUD socket — nesting again would recurse.
+case "${TMUX:-}" in
+  *grok-hud*) passthrough "$@" ;;
+esac
+
+# Herdr is its own multiplexer ($TMUX is unset in a herdr pane). We still wrap
+# Grok in `tmux -L grok-hud` so the 5-line footer matches iTerm. The pane's
+# real process is tmux — `agent start --kind grok` then times out unless we
+# report the pane as grok (and `exec -a grok` so argv0 still matches).
+if [ -n "${HERDR_PANE_ID:-}" ] && command -v herdr >/dev/null 2>&1; then
+  # Pane id MUST come first — `herdr pane report-agent --source X` parses X as a flag.
+  herdr pane report-agent "$HERDR_PANE_ID" --source grok-hud --agent grok --state idle >/dev/null 2>&1 || true
 fi
 
 BG="$("$WRAP_DIR/theme-bg.sh" 2>/dev/null || echo '#0a0a0a')"
 name="grok-hud-$$"
 cmd=$(printf '%q ' "$GROK_BIN" "$@")
-exec tmux -L grok-hud -f "$CONF" new-session -s "$name" \
+# Isolated socket — never touch herdr / an outer tmux. `env -u TMUX` is
+# required when the caller is already tmux ("sessions should be nested with
+# care"); herdr has TMUX unset so this is a no-op there.
+# argv0=grok so herdr process detection still matches if report-agent races.
+unset TMUX
+exec -a grok tmux -L grok-hud -f "$CONF" new-session -s "$name" \
   "$cmd" \; set-option -g status-style "bg=${BG},fg=default" \; set-option -g status-bg "$BG"

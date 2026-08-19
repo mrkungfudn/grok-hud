@@ -36,6 +36,8 @@ curl -fsSL https://raw.githubusercontent.com/mrkungfudn/grok-hud/main/install.sh
 
 Open a **new terminal tab**, then run `grok`. The HUD sits at the bottom.
 
+Works inside **herdr** the same way (`herdr agent start --kind grok`, or type `grok` in a new herdr tab). Herdr is not tmux; grok-hud still wraps Grok in an isolated `tmux -L grok-hud` so the 5-line footer matches a normal tab. Use a **new** herdr tab after install — an old pane still has the unwrapped `grok` on PATH.
+
 macOS without tmux:
 
 ```bash

@@ -218,10 +218,14 @@ function main() {
 
   const blob = grokHudJson(cwd);
   const sessions = Array.isArray(blob.sessions) ? blob.sessions : [];
-  const s =
-    (wantPid && sessions.find((x) => Number(x.pid) === wantPid)) ||
-    sessions.find((x) => x.live) ||
-    sessions[0];
+  // When tmux gives us a pane pid, NEVER fall back to another live Grok
+  // (herdr splash used to steal this conversation's 300k context bar).
+  let s = wantPid
+    ? sessions.find((x) => Number(x.pid) === wantPid)
+    : sessions.find((x) => x.live) || sessions[0];
+  if (!s && wantPid) {
+    s = { cwd, sessionId: "", live: true, pid: wantPid, git: {}, context: {} };
+  }
   if (!s) {
     console.log(`${DIM}grok-hud: no session${RESET}`);
     return;

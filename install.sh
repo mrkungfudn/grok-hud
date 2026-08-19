@@ -65,10 +65,16 @@ ln -sfn "$SRC/bin/grok-hud.js" "$HOME/.local/bin/grok-hud"
 info "installing wrap scripts → $DATA"
 mkdir -p "$DATA/bin"
 cp -f "$SRC/wrap/launch.sh" "$SRC/wrap/status-line.sh" "$SRC/wrap/path.sh" \
-  "$SRC/wrap/tmux.conf" "$SRC/wrap/render.mjs" "$SRC/wrap/with-hud.sh" \
+  "$SRC/wrap/tmux.conf" "$SRC/wrap/render.mjs" \
   "$SRC/wrap/ansi-to-tmux.py" "$SRC/wrap/theme-bg.sh" "$DATA/"
 cp -f "$SRC/wrap/grok" "$DATA/bin/grok"
+cp -f "$SRC/wrap/with-hud.sh" "$DATA/with-hud.sh"
+cp -f "$SRC/wrap/with-hud.zsh" "$DATA/with-hud.zsh" 2>/dev/null || cp -f "$SRC/wrap/with-hud.sh" "$DATA/with-hud.zsh"
 chmod +x "$DATA/launch.sh" "$DATA/status-line.sh" "$DATA/bin/grok" "$DATA/render.mjs" "$DATA/theme-bg.sh"
+# herdr `agent start --kind grok` execs PATH `grok`, not the zsh function.
+# Grok's installer points ~/.local/bin/grok at the real binary — that skips
+# the HUD wrap. Real binary stays ~/.grok/bin/grok; this link is the wrap.
+ln -sfn "$DATA/bin/grok" "$HOME/.local/bin/grok"
 if [ ! -f "$DATA/config.json" ]; then
   cp "$SRC/config.example.json" "$DATA/config.json"
 fi
@@ -106,6 +112,7 @@ echo "  New terminal tab, then:"
 echo "    grok"
 echo
 echo "  HUD is 5 colored lines under the TUI (tmux, same window)."
+echo "  Works inside herdr too (new tab, or: herdr agent start --kind grok)."
 echo "  Disable:  GROK_HUD_AUTO=0 grok"
 echo "  Config:   ~/.grok/plugins/grok-hud/config.json"
 echo
