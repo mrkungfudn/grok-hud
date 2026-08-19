@@ -122,6 +122,10 @@ function sessionFiles(cwd, sessionId) {
  * parse() returns nothing — HUD then falls back to the stale signals number.
  * `_meta.totalTokens` sits at the END of the line, so the tail still has it.
  * LAST sane value, not MAX — MAX once picked a 5M junk field.
+ *
+ * 🔴 Match `_meta.totalTokens` only. A bare `"totalTokens":N` also appears in
+ * nested API `usage` blobs inside tool output (measured: 1,224,478 input+output
+ * vs real _meta 247k) — that is what painted 245% (1.2M/500k).
  */
 function lastTotalTokens(updatesPath) {
   try {
@@ -129,7 +133,7 @@ function lastTotalTokens(updatesPath) {
     const st = spawnSync("tail", ["-c", "524288", updatesPath], { encoding: "utf8", timeout: 1000 });
     const text = st.stdout || "";
     let last = 0;
-    for (const m of text.matchAll(/"totalTokens"\s*:\s*(\d+)/g)) {
+    for (const m of text.matchAll(/"_meta"\s*:\s*\{\s*"totalTokens"\s*:\s*(\d+)/g)) {
       const n = Number(m[1]);
       if (n > 0 && n <= 2_000_000) last = n;
     }
@@ -234,10 +238,13 @@ function main() {
   const { dir: sessDir, signals, summary } = sessionFiles(s.cwd || cwd, s.sessionId);
   const git = s.git || {};
   const ctx = s.context || {};
-  const total = Number(ctx.total ?? signals.contextWindowTokens ?? 500000) || 500000;
+  let total = Number(ctx.total ?? signals.contextWindowTokens ?? 500000) || 500000;
   const liveUsed = lastTotalTokens(join(sessDir, "updates.jsonl"));
   const used = liveUsed || Number(ctx.used ?? signals.contextTokensUsed ?? 0);
-  const pct = total > 0 ? Math.round((used / total) * 100) : 0;
+  // Bar width is 0–100; never paint 245%. If used still exceeds the window
+  // after the _meta filter, grow the denominator instead of overflowing %.
+  if (used > total && total > 0) total = used;
+  const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
   const usage = blob.creditUsage || {};
   const usagePct = Math.round(Number(usage.percent) || 0);
   const dirty = dirtyCount(s.cwd || cwd);

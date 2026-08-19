@@ -76,6 +76,24 @@ Chạy trong **herdr** cũng được (`herdr agent start --kind grok`, hoặc g
 
 Cập nhật: chạy lại đúng lệnh `curl … | bash`.
 
+## Copy cái này cho agent
+
+Không cần nhớ lệnh — dán khối dưới vào Grok, Claude, Cursor, Codex, hoặc agent nào đang dùng:
+
+```
+Cài grok-hud trên máy này từ https://github.com/mrkungfudn/grok-hud
+
+Chạy một lệnh này (tự cài Git, Node.js ≥ 18, tmux, và Grok CLI nếu thiếu):
+
+curl -fsSL https://raw.githubusercontent.com/mrkungfudn/grok-hud/main/install.sh | bash
+
+Xong bảo tôi mở TAB TERMINAL MỚI rồi gõ `grok`. HUD là 5 dòng tmux dưới Grok TUI — không tách pane iTerm/tmux. Tắt: GROK_HUD_AUTO=0 grok. Binary Grok thật vẫn ở ~/.grok/bin/grok.
+
+Nếu repo đã clone sẵn thì chạy `bash install.sh` ở root repo, đừng curl.
+
+Đừng gắn vào tmux/herdr đang có của user. Wrap dùng socket riêng: tmux -L grok-hud.
+```
+
 ## Dùng
 
 | | |

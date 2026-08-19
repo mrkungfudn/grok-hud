@@ -76,6 +76,24 @@ Works inside **herdr** the same way (`herdr agent start --kind grok`, or type `g
 
 To update, run the same `curl … | bash` again.
 
+## Copy this for your agent
+
+Do not need to know the commands — paste the block below into Grok, Claude, Cursor, Codex, or any coding agent:
+
+```
+Install grok-hud on this machine from https://github.com/mrkungfudn/grok-hud
+
+Run this one command (it installs Git, Node.js ≥ 18, tmux, and the Grok CLI if any are missing):
+
+curl -fsSL https://raw.githubusercontent.com/mrkungfudn/grok-hud/main/install.sh | bash
+
+Then tell me to open a NEW terminal tab and run `grok`. The HUD is 5 colored tmux status lines under the Grok TUI — not an iTerm/tmux split pane. Disable with GROK_HUD_AUTO=0 grok. The real Grok binary stays at ~/.grok/bin/grok.
+
+If this repo is already cloned, run `bash install.sh` from the repo root instead of curling.
+
+Do not attach to the user's existing tmux or herdr server. The wrap uses an isolated socket: tmux -L grok-hud.
+```
+
 ## Usage
 
 | | |

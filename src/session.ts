@@ -18,6 +18,10 @@ import { parseRecentTools } from './activity.js';
  * tail window, parse() then returns nothing, and HUD falls back to the stale
  * signals number. `_meta` sits at the END of the line so the tail still has
  * it. LAST sane value (≤ 2M), not MAX — MAX once picked a 5M junk field.
+ *
+ * 🔴 Match `_meta.totalTokens` only. Bare `"totalTokens":N` also lives in
+ * nested API `usage` inside tool output (1.2M input+output vs real _meta
+ * ~250k) — that painted 245% (1.2M/500k) on the HUD.
  */
 function lastTotalTokensFromUpdates(updatesPath: string): number {
   if (!fs.existsSync(updatesPath)) return 0;
@@ -31,7 +35,7 @@ function lastTotalTokensFromUpdates(updatesPath: string): number {
       const read = fs.readSync(fd, buf, 0, maxBytes, start);
       const content = buf.subarray(0, read).toString('utf8');
       let last = 0;
-      for (const m of content.matchAll(/"totalTokens"\s*:\s*(\d+)/g)) {
+      for (const m of content.matchAll(/"_meta"\s*:\s*\{\s*"totalTokens"\s*:\s*(\d+)/g)) {
         const n = Number(m[1]);
         if (n > 0 && n <= 2_000_000) last = n;
       }
@@ -172,14 +176,15 @@ export async function loadSessionSnapshot(options: {
 
   // Prefer live totalTokens (written every tool/stream tick) over signals.json
   // which only updates when a turn ends — that's why the HUD lagged Grok's meter.
-  const windowTokens = signals?.contextWindowTokens ?? 500_000;
+  let windowTokens = signals?.contextWindowTokens ?? 500_000;
   const liveTokens = lastTotalTokensFromUpdates(path.join(dir, 'updates.jsonl'));
   if (liveTokens > 0) {
+    if (liveTokens > windowTokens) windowTokens = liveTokens;
     signals = {
       ...(signals ?? {}),
       contextTokensUsed: liveTokens,
       contextWindowTokens: windowTokens,
-      contextWindowUsage: Math.round((liveTokens / windowTokens) * 100),
+      contextWindowUsage: Math.min(100, Math.round((liveTokens / windowTokens) * 100)),
       primaryModelId: signals?.primaryModelId ?? summary?.current_model_id,
     };
   }
