@@ -79,6 +79,8 @@ if [ -n "${TMUX:-}" ]; then
   passthrough "$@"
 fi
 
+BG="$("$WRAP_DIR/theme-bg.sh" 2>/dev/null || echo '#0a0a0a')"
 name="grok-hud-$$"
 cmd=$(printf '%q ' "$GROK_BIN" "$@")
-exec tmux -L grok-hud -f "$CONF" new-session -s "$name" "$cmd"
+exec tmux -L grok-hud -f "$CONF" new-session -s "$name" \
+  "$cmd" \; set-option -g status-style "bg=${BG},fg=default" \; set-option -g status-bg "$BG"

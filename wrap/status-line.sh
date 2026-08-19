@@ -21,6 +21,12 @@ if [ -f "$META" ]; then
   read -r old_ts old_key <"$META" || true
 fi
 
+BG="$("$WRAP_DIR/theme-bg.sh" 2>/dev/null || echo '#0a0a0a')"
+if [ "$LINE" = "1" ]; then
+  tmux -L grok-hud set-option -g status-style "bg=${BG},fg=default" 2>/dev/null || true
+  tmux -L grok-hud set-option -g status-bg "$BG" 2>/dev/null || true
+fi
+
 if [ ! -f "$CACHE" ] || [ "$CWD $PANE_PID" != "$old_key" ] || [ $((now - old_ts)) -ge 1 ]; then
   tmp="${CACHE}.$$"
   GROK_HUD_TMUX=1 node "$DIR/render.mjs" "$CWD" "$PANE_PID" >"$tmp" 2>/dev/null || true
@@ -28,4 +34,5 @@ if [ ! -f "$CACHE" ] || [ "$CWD $PANE_PID" != "$old_key" ] || [ $((now - old_ts)
   printf '%s %s\n' "$now" "$CWD $PANE_PID" >"$META"
 fi
 
-sed -n "${LINE}p" "$CACHE" | tr -d '\r'
+line=$(sed -n "${LINE}p" "$CACHE" | tr -d '\r')
+printf '#[bg=%s]%s\n' "$BG" "$line"

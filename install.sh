@@ -66,9 +66,9 @@ info "installing wrap scripts → $DATA"
 mkdir -p "$DATA/bin"
 cp -f "$SRC/wrap/launch.sh" "$SRC/wrap/status-line.sh" "$SRC/wrap/path.sh" \
   "$SRC/wrap/tmux.conf" "$SRC/wrap/render.mjs" "$SRC/wrap/with-hud.sh" \
-  "$SRC/wrap/ansi-to-tmux.py" "$DATA/"
+  "$SRC/wrap/ansi-to-tmux.py" "$SRC/wrap/theme-bg.sh" "$DATA/"
 cp -f "$SRC/wrap/grok" "$DATA/bin/grok"
-chmod +x "$DATA/launch.sh" "$DATA/status-line.sh" "$DATA/bin/grok" "$DATA/render.mjs"
+chmod +x "$DATA/launch.sh" "$DATA/status-line.sh" "$DATA/bin/grok" "$DATA/render.mjs" "$DATA/theme-bg.sh"
 if [ ! -f "$DATA/config.json" ]; then
   cp "$SRC/config.example.json" "$DATA/config.json"
 fi
