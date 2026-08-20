@@ -101,6 +101,7 @@ Do not attach to the user's existing tmux or herdr server. The wrap uses an isol
 | Show HUD | `grok` (new tab, or `source ~/.zshrc`) |
 | Disable HUD | `GROK_HUD_AUTO=0 grok` |
 | Bare Grok binary | `~/.grok/bin/grok` |
+| Update Grok CLI | `~/.grok/bin/grok update --check` then `~/.grok/bin/grok update` (new tab after). `--check --alpha` **switches channel**. See [`AGENTS.md`](AGENTS.md) |
 | Colors / fields | `~/.grok/plugins/grok-hud/config.json` |
 | One-shot snapshot | `grok-hud` |
 | JSON | `grok-hud --json` |

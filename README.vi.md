@@ -101,6 +101,7 @@ Nếu repo đã clone sẵn thì chạy `bash install.sh` ở root repo, đừng
 | Hiện HUD | `grok` (tab mới, hoặc `source ~/.zshrc`) |
 | Tắt HUD | `GROK_HUD_AUTO=0 grok` |
 | Binary Grok trần | `~/.grok/bin/grok` |
+| Update Grok CLI | `~/.grok/bin/grok update --check` rồi `~/.grok/bin/grok update` (mở tab mới). `--check --alpha` **đổi kênh**. Chi tiết [`AGENTS.md`](AGENTS.md) |
 | Màu / field | `~/.grok/plugins/grok-hud/config.json` |
 | Snapshot một lần | `grok-hud` |
 | JSON | `grok-hud --json` |

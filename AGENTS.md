@@ -20,7 +20,7 @@ Touch all four in that commit:
 
 GitHub's file list shows the **last commit subject per file**. After a bump, leftover files still showing an old Vietnamese subject need to be in that same commit (or they keep lying on github.com).
 
-Current version: **0.2.3**.
+Current version: **0.2.4**.
 
 ## What this is
 
@@ -62,6 +62,31 @@ GROK_HUD_AUTO=0 grok     # bare TUI
 
 Missing Git / Node ≥ 18 / tmux / Grok CLI: `install.sh` installs them (Homebrew on macOS, apt/dnf/pacman or nvm on Linux, Grok via `https://x.ai/cli/install.sh`).
 
+## Updating the Grok CLI (not grok-hud)
+
+The HUD `v1.0.x` on line 2 is Grok Build, read from `~/.grok/version.json`. That is **not** this repo's version.
+
+Always call the **real** binary. `grok` on PATH is the HUD wrap; `~/.local/bin/grok` is also the wrap. Grok's own updater may retarget that link — `install.sh` puts the wrap back.
+
+```bash
+~/.grok/bin/grok --version
+~/.grok/bin/grok update --check          # stable
+~/.grok/bin/grok update                  # install latest on the current channel
+~/.grok/bin/grok update --alpha          # alpha (faster, may have bugs)
+~/.grok/bin/grok update --stable         # back to weekly stable
+```
+
+🔴 **`--check --alpha` already switches `channel` in `~/.grok/config.toml`.** Measured 20/08/2026: `--check --alpha` flipped the machine to alpha before anyone installed. Do not probe alpha unless you mean to stay there.
+
+Measured same day:
+
+| Channel | Latest | Notes |
+|---|---|---|
+| stable | **1.0.5** (15/08/2026) | [x.ai/build/changelog](https://x.ai/build/changelog) |
+| alpha | **1.0.7** | 1.0.6 never showed on the public stable changelog |
+
+After `grok update`, **open a new tab**. The running process keeps the old binary in memory; HUD `v…` only changes on a new `grok`.
+
 ## Commands & skill
 
 Grok plugin commands under `commands/`: `setup`, `status`, `watch`, `configure`. Skill: `skills/grok-hud/SKILL.md`.
@@ -72,3 +97,4 @@ Grok plugin commands under `commands/`: `setup`, `status`, `watch`, `configure`.
 - Don't `tmux kill-server` on the default socket — other tools (herdr) use other sockets, but the HUD socket is fair game only for HUD sessions.
 - Don't restore `~/.local/bin/grok` to the real binary while the wrap is supposed to be on PATH; `install.sh` retargets that link on purpose.
 - Don't ship a fix without a version bump (see **Version bump is mandatory**).
+- Don't run `grok update --check --alpha` "just to look" — it switches the channel.
