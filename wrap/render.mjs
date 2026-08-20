@@ -114,6 +114,34 @@ function sessionFiles(cwd, sessionId) {
 }
 
 /**
+ * Grok's active_sessions.json pid is often STALE (several sessions share one
+ * dead-or-wrong pid). In herdr the tmux pane_pid is the real grok process,
+ * so a pid lookup misses and the HUD stubs 0%/0s/[grok] while the TUI is
+ * mid-turn. The process keeps the session dir open — lsof is the ground truth.
+ */
+function sessionIdFromPid(pid) {
+  if (!pid) return "";
+  try {
+    const r = spawnSync("lsof", ["-p", String(pid), "-Fn"], {
+      encoding: "utf8",
+      timeout: 1500,
+    });
+    const prefix = join(HOME, ".grok/sessions") + "/";
+    for (const line of (r.stdout || "").split("\n")) {
+      if (!line.startsWith("n")) continue;
+      const p = line.slice(1);
+      if (!p.startsWith(prefix)) continue;
+      const rest = p.slice(prefix.length);
+      const sid = rest.split("/")[1] || "";
+      if (sid) return sid;
+    }
+  } catch {
+    /* lsof missing / permission */
+  }
+  return "";
+}
+
+/**
  * Grok's meter reads params._meta.totalTokens on every stream/tool tick.
  * signals.json only flushes at turn end (and lags auto-compact too).
  *
@@ -222,11 +250,16 @@ function main() {
 
   const blob = grokHudJson(cwd);
   const sessions = Array.isArray(blob.sessions) ? blob.sessions : [];
-  // When tmux gives us a pane pid, NEVER fall back to another live Grok
-  // (herdr splash used to steal this conversation's 300k context bar).
-  let s = wantPid
-    ? sessions.find((x) => Number(x.pid) === wantPid)
-    : sessions.find((x) => x.live) || sessions[0];
+  // Prefer the tmux pane pid. Grok often writes a STALE pid into
+  // active_sessions.json (herdr: 4 sessions claimed pid 86601 while the
+  // pane was 61614) — then fall back to lsof on the grok process, NEVER
+  // to "any live session" (that stole another conversation's context bar).
+  let s = wantPid ? sessions.find((x) => Number(x.pid) === wantPid) : null;
+  if (!s && wantPid) {
+    const sid = sessionIdFromPid(wantPid);
+    if (sid) s = sessions.find((x) => x.sessionId === sid) || { cwd, sessionId: sid, live: true, pid: wantPid, git: {}, context: {} };
+  }
+  if (!s && !wantPid) s = sessions.find((x) => x.live) || sessions[0];
   if (!s && wantPid) {
     s = { cwd, sessionId: "", live: true, pid: wantPid, git: {}, context: {} };
   }
